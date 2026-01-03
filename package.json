@@ -1,0 +1,23 @@
+{
+  "name": "openapi-k6-mons",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/k6": "^1.4.0",
+    "commander": "^14.0.2",
+    "fs-extra": "^11.3.3",
+    "openapi-typescript": "^7.10.1",
+    "orval": "^7.17.2",
+    "prettier": "^3.7.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}
