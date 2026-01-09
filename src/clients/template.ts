@@ -1,5 +1,16 @@
-import { ClientGeneratorsBuilder, generateVerbImports, GeneratorOptions, GeneratorVerbOptions, pascal } from "orval";
-import { functionArguments, getDependencies, getRequestTemplateParamsValue, successStatus } from "./helpers";
+import {
+  ClientGeneratorsBuilder,
+  generateVerbImports,
+  GeneratorOptions,
+  GeneratorVerbOptions,
+  pascal,
+} from "orval";
+import {
+  functionArguments,
+  getDependencies,
+  getRequestTemplateParamsValue,
+  successStatus,
+} from "./helpers";
 
 export function clientGeneratorTemplate(): ClientGeneratorsBuilder {
   return {

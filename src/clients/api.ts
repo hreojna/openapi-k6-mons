@@ -1,5 +1,17 @@
-import { ClientGeneratorsBuilder, generateVerbImports, GeneratorOptions, GeneratorVerbOptions, pascal } from "orval";
+import {
+  camel,
+  ClientGeneratorsBuilder,
+  generateVerbImports,
+  GeneratorOptions,
+  GeneratorVerbOptions,
+  kebab,
+  pascal,
+  snake,
+} from "orval";
 import { functionArguments, getDependencies } from "./helpers";
+import fs from "fs-extra";
+import path from 'path';
+import config from "../config";
 
 export function clientGeneratorApi(): ClientGeneratorsBuilder {
   return {
@@ -16,6 +28,31 @@ export function clientGeneratorApi(): ClientGeneratorsBuilder {
   };
 }
 
+export const hooksApi = {
+  afterAllFilesWrite: [
+    (filePaths: string[]) => {
+      const apiFiles = filePaths.filter(p => !p.includes('.schemas.'));
+
+      const imports: string[] = [];
+      const entries = apiFiles.map((filePath) => {
+        const fileName = path.basename(filePath, '.ts');
+        const tagName = fileName.replace(`.${config.api.extension}`, '')
+        imports.push(`import * as ${camel(tagName)} from './${tagName}/${fileName}';`);
+        return camel(tagName)
+      }).map(tag => `  ${tag}`).join(',\n');
+
+      const indexContent = [
+        ...imports,
+        '',
+        `export const api = {`,
+        entries,
+        `};`
+      ].join('\n');
+
+      fs.writeFileSync("./api/index.api.ts", indexContent);
+    },
+  ],
+}
 
 export function generateImplementationApi(
   {

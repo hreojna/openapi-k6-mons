@@ -1,33 +1,24 @@
 import { Command } from "commander";
-import {
-  clientGeneratorApi,
-} from "./clients/api";
-import {
-  clientGeneratorTemplate,
-} from "./clients/template"
+import { clientGeneratorApi, hooksApi } from "./clients/api";
+import { clientGeneratorTemplate } from "./clients/template";
 import orval from "orval";
+import config from "./config";
 
 const program = new Command();
-const hooks = {
-  afterAllFilesWrite: {
-    command: "npx prettier --write .",
-    injectGeneratedDirsAndFiles: false,
-  },
-};
+
 const template = async (filePage: string) => {
   orval({
     input: { target: filePage },
     output: {
       mode: "tags-split",
-      target: "./api",
-      fileExtension: ".template.ts",
+      target: config.dir,
+      fileExtension: `.${config.template.extension}.ts`,
       prettier: true,
       client: clientGeneratorTemplate,
       override: {
-        header: false
+        header: false,
       },
     },
-    hooks: hooks,
   });
 };
 const api = async (filePage: string) => {
@@ -35,14 +26,14 @@ const api = async (filePage: string) => {
     input: { target: filePage },
     output: {
       mode: "tags-split",
-      target: "./api",
-      fileExtension: ".api.ts",
+      target: config.dir,
+      fileExtension: `.${config.api.extension}.ts`,
       client: clientGeneratorApi,
       override: {
         header: false,
       },
     },
-    hooks: hooks,
+    hooks: hooksApi,
   });
 };
 program.argument("<filePath>").action(async (filePage) => {

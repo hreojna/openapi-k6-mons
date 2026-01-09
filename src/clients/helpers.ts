@@ -1,4 +1,12 @@
-import { ClientDependenciesBuilder, GeneratorDependency, GeneratorSchema, GetterBody, GetterProp, GetterResponse } from "orval";
+import {
+  ClientDependenciesBuilder,
+  GeneratorDependency,
+  GeneratorSchema,
+  GetterBody,
+  GetterProp,
+  GetterResponse,
+} from "orval";
+import config from "../config";
 
 export const getDependencies: ClientDependenciesBuilder =
   (): GeneratorDependency[] => [
@@ -27,10 +35,9 @@ export const getDependencies: ClientDependenciesBuilder =
         { name: "Request", isConstant: true, values: true },
         { name: "HttpOption", isConstant: true, values: true },
       ],
-      dependency: "../../src/libs/index.ts",
+      dependency: config.mons,
     },
   ];
-
 
 export const getRequestTemplateParamsValue = ({
   response,
