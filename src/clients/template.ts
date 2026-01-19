@@ -1,16 +1,21 @@
 import {
+  camel,
   ClientGeneratorsBuilder,
   generateVerbImports,
   GeneratorOptions,
   GeneratorVerbOptions,
   pascal,
-} from "orval";
+} from 'orval'
 import {
+  builerMethodOfRequest,
   functionArguments,
   getDependencies,
   getRequestTemplateParamsValue,
   successStatus,
-} from "./helpers";
+} from './helpers'
+import fs from 'fs-extra'
+import path from 'path'
+import config from '../config'
 
 export function clientGeneratorTemplate(): ClientGeneratorsBuilder {
   return {
@@ -19,9 +24,40 @@ export function clientGeneratorTemplate(): ClientGeneratorsBuilder {
       return {
         implementation: generateImplementationTemplate(verbOptions, options),
         imports: generateVerbImports(verbOptions),
-      };
+      }
     },
-  };
+  }
+}
+
+export const hooksTemplate = {
+  afterAllFilesWrite: [
+    (filePaths: string[]) => {
+      const templateFiles = filePaths.filter((p) => !p.includes('.schemas.'))
+
+      const imports: string[] = []
+      const entries = templateFiles
+        .map((filePath) => {
+          const fileName = path.basename(filePath, '.ts')
+          const tagName = fileName.replace(`.${config.template.extension}`, '')
+          imports.push(
+            `import * as ${camel(tagName)} from './${tagName}/${fileName}';`
+          )
+          return camel(tagName)
+        })
+        .map((tag) => `  ${tag}`)
+        .join(',\n')
+
+      const indexContent = [
+        ...imports,
+        '',
+        `export const template = {`,
+        entries,
+        `};`,
+      ].join('\n')
+
+      fs.writeFileSync(`${config.dir}/index.template.ts`, indexContent)
+    },
+  ],
 }
 
 export function generateImplementationTemplate(
@@ -38,46 +74,38 @@ export function generateImplementationTemplate(
     summary,
     deprecated,
   }: GeneratorVerbOptions,
-  { route, context }: GeneratorOptions,
+  { route, context }: GeneratorOptions
 ) {
-  const prefix = pascal(tags[0]!);
-  operationName = `${prefix}Api${pascal(operationName)}`;
-  let url = `${pathRoute}`;
-  if (queryParams) url += "+`?${new URLSearchParams(params).toString()}`";
+  const prefix = pascal(tags[0]!)
+  operationName = `${prefix}Api${pascal(operationName)}`
+  let url = `${pathRoute}`
+  if (queryParams) url += '+`?${new URLSearchParams(params).toString()}`'
 
   let implementation: string = `export const ${operationName} = makeRequestTemplate({
     method: Method.${verb.toUpperCase()},
     url: '${pathRoute}',
     params: ${getRequestTemplateParamsValue({ response, body, headers: headers?.schema, queryParams: queryParams?.schema })},
-    checks: statusIs(${successStatus(response).join(",")}),
+    checks: statusIs(${successStatus(response).join(',')}),
 })
-`;
+`
 
-  const args = functionArguments(props);
-  const argsParse = (obj: {
-    queryVar?: string[];
-    queryParam?: string;
-    body?: string;
-  }) => {
-    let argsString: string[] = [];
-    if (obj.queryVar && obj.queryVar.length > 0)
-      argsString.push(`queryVar: { ${obj.queryVar.join(", ")} }`);
-    if (obj.queryParam) argsString.push(obj.queryParam);
-    if (obj.body) argsString.push(obj.body);
-    return argsString.join(",\n    ");
-  };
+  const args = functionArguments(props)
 
   implementation += `
 export function get${operationName}(
-    ${argsParse(args)}
+   ${args && args.length > 0 ? `\n    ${args.join(',\n    ')}, params?: Params` : 'params?: Params'}
 ): Request {
     return RequestBuilder.init(${operationName})
-`;
-  implementation +=
-    args.queryVar.length > 0 ? "        .url(queryVar)\n" : "        .url()\n";
-  implementation += args.queryParam ? "        .urlParam(queryParam)\n" : "";
-  implementation += args.body ? "        .body(body)\n" : "";
-  implementation += "        .build()\n";
-  implementation += "}\n\n";
-  return implementation;
+      .params(params)${builerMethodOfRequest(props)}
+}\n\n`
+
+  if (pathRoute === '/api/bytes/{n}') {
+    // console.log(response)
+    // console.log(JSON.stringify(response.types.success[0]))
+    // console.log(queryParams)
+    // console.log(headers)
+    // console.log(body)
+    // console.log(JSON.stringify(args))
+  }
+  return implementation
 }
